@@ -1,0 +1,12 @@
+# Wikidata extracts, smoke samples, failure logs, and map HTML
+data/
+
+# Virtual environments
+.venv/
+venv/
+
+# Notebook and Python caches
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+.DS_Store
