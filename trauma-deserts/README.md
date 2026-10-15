@@ -137,6 +137,31 @@ Distance and log population density move together too (r = −0.60). A tenfold i
 
 Homicide rates in the same file, all methods, have no distance slope once density is held fixed (−0.01 deaths per 100,000 per 10 miles, p = 0.79, 1,425 counties). CHR publishes that rate for 96% of the near counties and 34% of the far ones.
 
+## The split the death rate cannot show
+
+A firearm death rate is a product. Part of it is suicide, usually complete before a trauma center can matter. The rest is shootings that were fatal. A closer center can lower the chance that a shooting kills. People can also be shot more often where a rescue is close. Those two changes push the published rate in opposite directions. One cross-section of deaths cannot say how much of each is happening.
+
+The file has no count of people who were shot and lived, and no years before and after a center opened. An equation that needs either of those is not identified. The notebook `masking_simulation.ipynb` stays inside `county_distance.csv`. It draws the two unknown pieces, then keeps only the draws that still reproduce the density-adjusted distance slope.
+
+![Worlds that fit the same firearm death rates](equivalent_worlds.png)
+
+What is identified is the regression. Among the 2,306 counties with a published rate, holding log density fixed and weighting by population, an extra 10 miles lines up with −0.06 firearm deaths per 100,000 (95% CI −0.19 to +0.06). In a model that also holds rural share and the race and Hispanic shares fixed, removing distance changes the weighted R² by less than 0.001. Removing the race and Hispanic shares drops it by 0.43, from 0.52 to 0.10. Removing log density and rural share together drops it by 0.06. County-equal R² tells the same order: the shares, then density, then distance at about 0.003.
+
+![Associations with the published firearm death rate](what_lines_up.png)
+
+Read as associations, population-weighted, with robust intervals: a tenfold increase in density lines up with 4.5 fewer deaths per 100,000. A 10-point higher Non-Hispanic Black share lines up with 3.6 more. A 10-point higher American Indian or Alaska Native share lines up with 2.6 more. A 10-point higher Asian share lines up with 2.1 fewer. Ten miles lines up with about zero (−0.00, 95% CI −0.11 to +0.10). The rural term is what is left after density, and its interval includes zero. A county percentage is not a person's risk. Hispanic origin overlaps the race categories. None of these coefficients is an estimate of what would happen if the share, the density, or the miles were changed.
+
+The Monte Carlo uses two assumptions the file does not measure. It treats 55% of the death rate as suicide-like, in the neighborhood of the national firearm mix, and it treats the fatality of the rest as 0.25 at the resident-weighted mean of 23 miles. Four thousand draws vary how fast fatality rises with miles and how fast shootings change with miles. Eleven percent of them, 444, land inside the interval above. They fall along a line. One end of that line is no distance effect at all. Farther along it, fatality rises with miles and shootings fall with miles by enough to cancel. The counties do not choose a point on the line.
+
+One kept example raises fatality by 0.04 per 10 miles and lowers shootings by about 10% per 10 miles farther out. At a fixed density, deaths in that world stay between about 13 and 14 per 100,000 from 5 miles to 80. The implied shootings fall from about 29 per 100,000 at 5 miles to about 14 at 80. The same fatality rise with no change in shootings is rejected. It would add about 1.0 death per 100,000 per 10 miles, and the counties do not show that. Building a center, or refusing to, is not a result this cross-section can prescribe. The prescription depends on where you stand on that line, and the line is the assumption.
+
+After a population-weighted fit on log density, rural share, and the race and Hispanic shares, with distance left out, 882 of the 1,259 high-death, long-trip counties are still above their fitted rate. They hold 40 million people. The residual rate, scaled by population, is about 1,800 deaths a year. American Indian or Alaska Native residents are 2.3% of that population, against 2.8% in the raw corner. Forty-five of the 882 counties are at least 10% American Indian or Alaska Native, and they hold 1.6 million of the 40 million. The largest leftovers are Pima County, Arizona; Lake County, Indiana; and Yavapai and Mohave counties in Arizona. The residual corner is not an American Indian or Alaska Native set.
+
+```bash
+cd trauma-deserts
+.venv/bin/python masking_simulation.py
+```
+
 ## How the miles were measured
 
 The hospital layer contributes 564 open adult Level I or II centers: 239 Level I and 321 Level II in the lower 48, three Level II centers in Alaska, and one Level I center in Hawaii. The median county centroid is 43 miles from the nearest of them. A quarter of counties are within 26 miles. Aleutians West is about 1,001 miles from Central Peninsula General Hospital in Soldotna.
