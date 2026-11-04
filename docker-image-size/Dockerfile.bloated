@@ -1,0 +1,39 @@
+# Baseline: one stage, default Python image, leftover build tools and caches.
+# This file is the anti-pattern. Do not ship it.
+#
+# FROM python:3.12 is a full Debian image. It already contains gcc, g++, make,
+# header files, git, and wget. Streamlit does not need those at runtime.
+FROM python:3.12
+
+WORKDIR /app
+
+# No --no-install-recommends, and the apt index is left in /var/lib/apt/lists.
+# nodejs/npm exist only so the next RUN can materialize a frontend tree this
+# process never imports.
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    make \
+    git \
+    curl \
+    wget \
+    nodejs \
+    npm
+
+COPY app/requirements.txt app/requirements-dev.txt ./
+
+# pip keeps a copy of every wheel under /root/.cache/pip unless told not to.
+# requirements-dev adds Jupyter, pytest, and black, which the running app
+# does not import.
+RUN pip install -r requirements.txt -r requirements-dev.txt
+
+COPY frontend/package.json frontend/
+# node_modules is a build-time artifact. Leaving it in the runtime image is
+# the same class of mistake as leaving gcc: it was needed to *make* something,
+# not to *run* Streamlit.
+RUN cd frontend && npm install
+
+COPY app/app.py ./app.py
+
+EXPOSE 8501
+ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]

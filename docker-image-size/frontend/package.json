@@ -1,0 +1,13 @@
+{
+  "name": "unused-frontend",
+  "private": true,
+  "description": "Build-time JavaScript. A Streamlit runtime does not import this tree.",
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "webpack": "^5.95.0"
+  }
+}

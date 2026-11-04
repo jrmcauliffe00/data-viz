@@ -1,0 +1,109 @@
+{
+  "note": "Uncompressed sizes are what `docker images` reports. Compressed sizes are what a cold `docker pull` transfers. Base-image rows are published measurements. Streamlit recipe rows are a composed example of one app; only the Streamlit tutorial total is a published image size.",
+  "base_images": [
+    {
+      "label": "python:3.12-alpine",
+      "uncompressed_mb": 51.8,
+      "compressed_mb": 17.19,
+      "uncompressed_source": "testdriven.io, python 3.12.2-alpine, `docker images` (2024)",
+      "compressed_source": "Docker Hub, python:3.12.14-alpine, linux/amd64"
+    },
+    {
+      "label": "python:3.12-slim",
+      "uncompressed_mb": 130.0,
+      "compressed_mb": 41.19,
+      "uncompressed_source": "testdriven.io, python 3.12.2-slim, `docker images` (2024)",
+      "compressed_source": "Docker Hub, python:3.12.14-slim, linux/amd64"
+    },
+    {
+      "label": "python:3.12",
+      "uncompressed_mb": 1010.0,
+      "compressed_mb": 391.87,
+      "uncompressed_source": "sluofoss, python:3.12 Debian, Dec 2024 (1.01 GB); testdriven.io 3.12.2-bookworm 1.02 GB",
+      "compressed_source": "Docker Hub, python:3.12.14, linux/amd64"
+    }
+  ],
+  "components_mb": {
+    "slim_base": {
+      "mb": 130,
+      "kept_in": ["bloated", "tutorial", "multistage"],
+      "source": "testdriven.io python 3.12.2-slim uncompressed"
+    },
+    "streamlit_runtime": {
+      "mb": 740,
+      "kept_in": ["bloated", "tutorial", "multistage"],
+      "source": "Residual of Streamlit's published 1.02 GB tutorial image after subtracting slim (130) and build-essential/curl/git (150). Dominated by pyarrow; Spatial Workflow measured pyarrow at 156 MB inside a 771 MB Streamlit map image."
+    },
+    "build_tools": {
+      "mb": 150,
+      "kept_in": ["tutorial"],
+      "source": "Streamlit tutorial installs build-essential, curl, and git into the final slim image. testdriven.io measured gcc alone at +103 MB (259 vs 156 MB) on a smaller Python app."
+    },
+    "fat_debian_extra": {
+      "mb": 880,
+      "kept_in": ["bloated"],
+      "source": "python:3.12 (1010) minus python:3.12-slim (130). The default tag ships gcc, g++, make, headers, git, wget, and other build packages the slim tag strips. testdriven.io: bookworm 1.02 GB vs slim 130 MB, 1,711 vs 509 commands (tchesnokov)."
+    },
+    "nodejs_npm": {
+      "mb": 110,
+      "kept_in": ["bloated"],
+      "source": "Estimate for Debian `apt-get install nodejs npm` without --no-install-recommends. Not a measured layer from this repo."
+    },
+    "apt_lists": {
+      "mb": 35,
+      "kept_in": ["bloated"],
+      "source": "Flytekit maintainers measured 20–30 MB from uncleaned /var/lib/apt/lists (PR 1927). Rounded up."
+    },
+    "jupyter_dev": {
+      "mb": 200,
+      "kept_in": ["bloated"],
+      "source": "Estimate for pip-installing jupyter, pytest, and black on top of the Streamlit stack. JupyterLab trees commonly land in the 150–250 MB range."
+    },
+    "pip_cache": {
+      "mb": 180,
+      "kept_in": ["bloated"],
+      "source": "pip keeps wheels under /root/.cache/pip. Flyte agent image: 813 MB. TVM CI: 700 MB CPU / 1.6 GB GPU. 180 MB is a modest stand-in for this app's wheels, not those CI images."
+    },
+    "node_modules": {
+      "mb": 200,
+      "kept_in": ["bloated"],
+      "source": "Estimate for `npm install` of a small React/webpack/TypeScript tree. Typical node_modules is 150–300 MB. The bloated Dockerfile actually runs npm install; this number is the size used in the figure, not a build from this machine."
+    }
+  },
+  "recipes": {
+    "bloated": {
+      "label": "Bloated single-stage",
+      "kind": "composed estimate",
+      "dockerfile": "Dockerfile.bloated"
+    },
+    "tutorial": {
+      "label": "Streamlit tutorial",
+      "kind": "published total (1.02 GB); stacked split is estimated",
+      "total_mb_published": 1020,
+      "dockerfile": "Streamlit docs, python:3.12-slim + build-essential + curl + git"
+    },
+    "multistage": {
+      "label": "Multi-stage slim",
+      "kind": "composed estimate",
+      "dockerfile": "Dockerfile.multistage"
+    }
+  },
+  "compression_ratio_for_estimates": {
+    "ratio": 0.35,
+    "note": "Official python tags compress to 0.32 (slim) through 0.39 (default). Composed app images use 0.35 times uncompressed as a pull-size stand-in. They are not Hub measurements."
+  },
+  "pull_model": {
+    "intercept_ms": 4391,
+    "slope_ms_per_mb_per_mbit": 7794,
+    "r_squared": 0.95,
+    "bandwidths_mbit": [5, 20, 100],
+    "fit_bandwidths_mbit": [5, 20],
+    "source": "Reddy, University of Wisconsin–Madison honors thesis, 2026. Combined shaped dataset, N=48. pull_ms = 4391 + 7794 × (compressed_MB / bandwidth_Mbit). Testbed is Kind + a local registry with tc shaping, not Docker Hub itself.",
+    "caveats": [
+      "Linear in compressed size at a fixed bandwidth, plus a ~4.4 s intercept for registry/TLS/manifest work.",
+      "Fit is on 5 and 20 Mbit/s. The 100 Mbit/s line is the same equation outside the fit.",
+      "On a fast unconstrained link, unpacking large layers can dominate (Sandboxer: node:22 spend was mostly decompress/write, ~26 MB/s end-to-end).",
+      "Tiny images are round-trip bound. Sandboxer: alpine:3.20 at 3.6 MB still took 1.6 s on Docker Hub because of token, manifest, and config requests."
+    ]
+  }
+}

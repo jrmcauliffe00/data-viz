@@ -1,0 +1,11 @@
+.venv
+__pycache__
+.git
+*.png
+frontend
+README.md
+plot.py
+estimates.json
+Dockerfile*
+requirements.txt
+app/requirements-dev.txt

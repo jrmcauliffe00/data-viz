@@ -1,0 +1,46 @@
+# syntax=docker/dockerfile:1
+# Runtime image: slim Python, the virtualenv, and the app file.
+# Compilers, pip's download cache, and the JavaScript toolchain stay in the
+# builder stage and are discarded.
+
+FROM python:3.12-slim AS builder
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# gcc is here because a C extension may need to compile when a wheel is
+# missing. It is not copied into the final image.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY app/requirements.txt ./
+
+# The cache mount is on the BuildKit host. It speeds rebuilds without baking
+# /root/.cache/pip into a layer.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip && pip install -r requirements.txt
+
+FROM python:3.12-slim
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/opt/venv/bin:$PATH" \
+    STREAMLIT_BROWSER_GATHER_USAGE_STATS=false \
+    STREAMLIT_SERVER_HEADLESS=true
+
+RUN useradd --create-home --uid 1000 appuser
+COPY --from=builder /opt/venv /opt/venv
+COPY app/app.py ./app.py
+RUN chown -R appuser:appuser /app
+
+EXPOSE 8501
+USER appuser
+ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
